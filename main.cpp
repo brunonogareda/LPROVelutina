@@ -1,4 +1,4 @@
-#include <cv.h>
+﻿#include <cv.h>
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -15,7 +15,7 @@
 
 int main( int argc, char** argv )
 {
-
+asasasasasasasa
        //Para vídeo o cámara por defecto
        std::string arg = argv[1];
 
