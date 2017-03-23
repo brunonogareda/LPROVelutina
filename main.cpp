@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include <cv.h>
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
@@ -296,5 +297,7 @@ cvCreateTrackbar("HighV", "Control", &iHighV, 255);
 
 
 
+=======
+>>>>>>> origin/master
 
 
