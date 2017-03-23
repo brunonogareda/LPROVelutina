@@ -1,4 +1,4 @@
-#include <cv.h>
+﻿#include <cv.h>
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -13,11 +13,19 @@
  using namespace std;
  using namespace cv;
 
+<<<<<<< HEAD
 //int main( int argc, char** argv )
 //{
 
 //       //Para vídeo o cámara por defecto
 //       std::string arg = argv[1];
+=======
+int main( int argc, char** argv )
+{
+asasasasasasasa
+       //Para vídeo o cámara por defecto
+       std::string arg = argv[1];
+>>>>>>> origin/master
 
 //   VideoCapture cap(arg); //capture the video from web cam
 
