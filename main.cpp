@@ -84,6 +84,8 @@ Mat descriptorsFace, descriptorsFrame;
            //Reduce el tamaño de ventana
            boundRect=detecta_contorno(mascara==255, frame);
            puntos=histograma(boundRect, frame);
+           Point2i punto = puntos[0];
+           system("python servo_coords.py "+punto.x + " " +punto.y);
            resize(frame, original, Size(), 0.5, 0.5, INTER_LINEAR);
        }
        else
