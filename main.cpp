@@ -15,8 +15,8 @@
 
  /** Funciones */
 Mat detectForeground( Mat frame , Mat& Mask , BackgroundSubtractorMOG2& bgModel);
-Mat detecta_contorno(Mat img, Mat frame);
-vector<Mat> histograma(vector<Rect> boundRect, Mat frame);
+vector<Rect> detecta_contorno(Mat mascara, Mat frame);
+vector<Point2i> histograma(vector<Rect> boundRect, Mat frame);
 Point2i angulo(vector<Rect> boundRect, int i, Mat frame);
 void sliders(Mat mascara);
 
@@ -39,6 +39,8 @@ Mat descriptorsFace, descriptorsFrame;
  {
    VideoWriter output_video;
    Mat img, frame, Mask, mascara, original, cuadra;
+   vector<Rect> boundRect;
+   vector<Point2i> puntos;
 
    //Para vídeo o cámara por defecto
    std::string arg = argv[1];
@@ -80,7 +82,8 @@ Mat descriptorsFace, descriptorsFrame;
 
            mascara=detectForeground( frame , Mask , bgModel);
            //Reduce el tamaño de ventana
-
+           boundRect=detecta_contorno(mascara==255, frame);
+           puntos=histograma(boundRect, frame);
            resize(frame, original, Size(), 0.5, 0.5, INTER_LINEAR);
        }
        else
@@ -103,6 +106,9 @@ Mat descriptorsFace, descriptorsFrame;
             break;
        case 'l':
             sliders(frame);
+       case 'c':
+            cout << "Coordenadas obtenidas: " << puntos << endl;
+            waitKey();
        default:
             break;
        }
@@ -144,7 +150,7 @@ Mat descriptorsFace, descriptorsFrame;
      imshow("foreground",frameAux);
 */
      //Obtenemos los objetos de la máscara
-     Mat img=detecta_contorno(Mask==255, frame);
+
 
      return Mask;
  }
@@ -154,12 +160,12 @@ Mat descriptorsFace, descriptorsFrame;
   * de los bordes que encuentre
   * en la máscara, y los encuadra **/
 
- Mat detecta_contorno(Mat img, Mat frame){
+ vector<Rect> detecta_contorno(Mat mascara, Mat frame){
      Mat frameAux;
      vector<vector<Point> > contours;
-     findContours(img, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+     findContours(mascara, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
      // Dibuja los objetos en blanco
-     drawContours(img, contours,-1,0,-1,8,noArray(),255,Point());
+     drawContours(mascara, contours,-1,0,-1,8,noArray(),255,Point());
 
      // Encuadramos los objetos obtenidos
      vector<vector<Point> > contours_poly(contours.size());
@@ -169,20 +175,21 @@ Mat descriptorsFace, descriptorsFrame;
          boundRect[i] = boundingRect(Mat(contours_poly[i]));
          //rectangle(frame, boundRect[i], 100, 2, 8, 0);
      }
-     histograma(boundRect, frame);
      //Reduce tamaño de ventana
      resize(frame, frameAux, Size(), 0.5, 0.5, INTER_LINEAR);
      imshow("Contornos", frameAux);
-     return img;
+     return boundRect;
  }
 
-vector<Mat> histograma(vector<Rect> boundRect, Mat frame){
+vector<Point2i> histograma(vector<Rect> boundRect, Mat frame){
     vector<Mat> rectInterestedVector;
+    Mat frameAux;
     Mat rectSection;
     Mat rectSectionHSV;
     Mat rectInterested;
     vector<vector<Point> > contours;
     Point2i punto;
+    vector<Point2i> puntos;
 
     for (int i=0; i<boundRect.size();i++){
         rectSection=frame(boundRect[i]);
@@ -193,30 +200,22 @@ vector<Mat> histograma(vector<Rect> boundRect, Mat frame){
         if(contours.size()!=0){
             rectInterestedVector.push_back(rectInterested);
             rectangle(frame, boundRect[i], 100, 2, 8, 0);
-            //punto=angulo(boundRect, i, frame);
+            punto=angulo(boundRect, i, frame);
+            puntos.push_back(punto);
         }
     }
-        return rectInterestedVector;
+    resize(frame, frameAux, Size(), 0.5, 0.5, INTER_LINEAR);
+    imshow("Seccion por color", frameAux);
+        return puntos;
 }
 
 Point2i angulo(vector<Rect> boundRect, int i, Mat frame){
     Rect coord = boundRect.at(i);
-    cout << "Propiedades del rectangulo" << coord << endl;
-    cout << "Ancho x Alto: " << coord.width << ":" << coord.height << endl;
-    cout << "Coordenadas esquina: " << coord.x << ":" << coord.y << endl;
-    int x = coord.x + coord.width/2;
-    int y = coord.y + coord.height/2;
+    int x = coord.x;
+    int y = coord.y;
     Point2i punto;
     punto.x = x;
     punto.y = y;
-    cout << punto << endl;
-    int difX = punto.x-frame.cols/2;
-    int anguloX = (difX*40)/(frame.cols/2);
-    int difY = -(punto.y-frame.rows/2);
-    int anguloY = (difY*40)/(frame.rows/2);
-    cout << "Tamano de escena: " << frame.cols << ":" << frame.rows << endl;
-    cout << "Angulos: " << anguloX << ":" << anguloY << endl;
-    waitKey();
     return punto;
 }
 
