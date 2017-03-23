@@ -13,6 +13,8 @@
  using namespace std;
  using namespace cv;
 
+//No se que me dice Waheed
+
  /** Funciones */
 Mat detectForeground( Mat frame , Mat& Mask , BackgroundSubtractorMOG2& bgModel);
 Mat detecta_contorno(Mat img, Mat frame);
