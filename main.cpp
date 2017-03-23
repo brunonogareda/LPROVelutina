@@ -14,11 +14,48 @@
  using namespace cv;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 //int main( int argc, char** argv )
 //{
 
 //       //Para vídeo o cámara por defecto
 //       std::string arg = argv[1];
+=======
+//No se que me dice Waheed
+
+ /** Funciones */
+Mat detectForeground( Mat frame , Mat& Mask , BackgroundSubtractorMOG2& bgModel);
+Mat detecta_contorno(Mat img, Mat frame);
+vector<Mat> histograma(vector<Rect> boundRect, Mat frame);
+Point2i angulo(vector<Rect> boundRect, int i, Mat frame);
+void sliders(Mat mascara);
+
+/** Variables globales */
+string window_name = "Capture - Face detection";
+static int Xmin=0, Ymin=0, Xmax=0, Ymax=0; //Encuadrar
+const int MAX_COUNT = 500;
+const int MAX_ITER = 10;
+int morph_size=5;
+bool trackObject=false;
+int bins = 16;
+int Lmin = 30;
+int Lmax = 200;
+cv::MatND hist(2, bins, CV_8UC2);
+vector<KeyPoint> keypointsFace,keypointsFrame;
+Mat descriptorsFace, descriptorsFrame;
+
+ /** @function main */
+ int main( int argc, const char** argv )
+ {
+   VideoWriter output_video;
+   Mat img, frame, Mask, mascara, original, cuadra;
+
+   //Para vídeo o cámara por defecto
+   std::string arg = argv[1];
+
+   // Abre el archivo de entrada
+   VideoCapture capture(arg);
+>>>>>>> origin/master
 =======
 int main( int argc, char** argv )
 {
@@ -27,7 +64,20 @@ asasasasasasasa
        std::string arg = argv[1];
 >>>>>>> origin/master
 
+<<<<<<< HEAD
 //   VideoCapture cap(arg); //capture the video from web cam
+=======
+   VideoCapture cap(arg); //capture the video from web cam
+>>>>>>> origin/master
+
+   // Si falla, activa la cámara por defecto
+    if (!cap.isOpened())
+        cap.open(atoi(arg.c_str()));
+    if (!cap.isOpened()) {
+        cerr << "No se ha podido abrir el archivo ni activar la cámara\n" << endl;
+        return 1;
+    }
+>>>>>>> origin/master
 
 //   // Si falla, activa la cámara por defecto
 //    if (!cap.isOpened())
