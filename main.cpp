@@ -109,7 +109,8 @@ Mat descriptorsFace, descriptorsFrame;
        case 'l':
             sliders(frame);
        case 'c':
-            cout << "Coordenadas obtenidas: " << puntos << endl;
+            cout << "Tamano: " << puntos.size() << endl;
+            cout << "Coordenadas obtenidas: " << puntos[0] << endl;
             waitKey();
        default:
             break;
@@ -175,7 +176,7 @@ Mat descriptorsFace, descriptorsFrame;
      for(int i=0; i<contours.size(); i++){
          approxPolyDP(Mat(contours[i]), contours_poly[i], 3, true);
          boundRect[i] = boundingRect(Mat(contours_poly[i]));
-         //rectangle(frame, boundRect[i], 100, 2, 8, 0);
+         rectangle(frame, boundRect[i], 100, 2, 8, 0);
      }
      //Reduce tamaño de ventana
      resize(frame, frameAux, Size(), 0.5, 0.5, INTER_LINEAR);
