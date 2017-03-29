@@ -10,6 +10,12 @@
 #include <iostream>
 #include <stdio.h>
 
+//Librerias para comunicación entre procesos
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
  using namespace std;
  using namespace cv;
 
@@ -21,6 +27,8 @@ vector<Rect> comp_Rect(vector<Rect> amarillo, Rect boundRect);
 vector<Point2i> hist_no_mov(Mat frame);
 Point2i angulo(Rect coord, Mat frame);
 void sliders(Mat mascara);
+int sendCoords(int X, int Y);
+
 
 /** Variables globales */
 string window_name = "Capture - Face detection";
@@ -337,3 +345,40 @@ vector<Point2i> hist_no_mov(Mat frame){
         return puntos;
 }
 
+/*
+Envia las coordenadas X e Y mediante tuberias a otro proceso distinto que las interpretará adecuadamente
+Added by brunonogareda
+*/
+int sendCoords(int X, int Y) {
+
+      int t;
+      char *pipe = "/tmp/coordenadas";
+
+      /*crea un nuevo archivo fifo especial,
+      incluye una ruta y un parametro con una
+      mascara de permisos.
+      */
+      mkfifo(pipe,0666);
+
+      /*
+      abrimos una nueva tuberia
+      O_RDONLY - Abrir para solo lectura
+      O_WRONLY - Abrir para solo escritura
+      O_RDWR - Abrir para lectura / escritura
+      O_APPEND - Agrega al final del Archivo
+      ...
+      */
+      t = open(pipe,O_WRONLY | O_NONBLOCK);
+      //escribimos el mensaje que compartiremos
+      char msg[40] = "";
+      snprintf(msg, sizeof(msg), "X:%i-Y:%i", X,Y);
+      write(t,msg,sizeof(msg));
+
+      //cerramos la tuberia
+      //close(t);
+
+      //borramos
+     	//unlink(pipe);
+
+       return 0;
+}
