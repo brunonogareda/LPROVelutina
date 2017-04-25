@@ -17,32 +17,30 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
  using namespace std;
  using namespace cv;
 
  /** Funciones */
 vector<Rect> detecta_contorno(Mat mascara, Mat frame);
-vector<Rect> comp_Rect(vector<Rect> amarillo, Rect boundRect);
+vector<Rect> comp_Rect(vector<Rect> rectangulos, Rect boundRect);
 vector<Point2i> hist_no_mov(Mat frame);
 Point2i coordToPoint(Rect coord, Mat frame);
 int sendCoords(int X, int Y);
 
 
 /** Variables globales */
-string window_name = "Capture - Face detection";
-static int Xmin=0, Ymin=0, Xmax=0, Ymax=0; //Encuadrar
-const int MAX_COUNT = 500;
-const int MAX_ITER = 10;
-int morph_size=5;
-bool trackObject=false;
-int bins = 16;
-int Lmin = 30;
-int Lmax = 200;
-cv::MatND hist(2, bins, CV_8UC2);
-vector<KeyPoint> keypointsFace,keypointsFrame;
-Mat descriptorsFace, descriptorsFrame;
+
+/** Ruta para la carpeta de la tubería FIFO */
 string DEFAULT_PIPE_NAME = "/tmp/coordenadas";
+
+/** Rango de detecci�n de colores */
+Scalar RangeColorDetec1 = Scalar(90,192,117);     //Pinza Azul
+Scalar RangeColorDetec2 = Scalar(112,255,217);		//Pinza Azul
+//Scalar RangeColorDetec1 = Scalar(122,57,148);		//Poliespan Rosa
+//Scalar RangeColorDetec2 = Scalar(179,134,233);	//Poliespan Rosa
+
+Scalar ColorRectangle = Scalar(17, 255, 0);
+
 
  /** @function main */
  int main( int argc, const char** argv )
@@ -56,7 +54,7 @@ string DEFAULT_PIPE_NAME = "/tmp/coordenadas";
    //std::string arg = argv[1];
 
    // Abre el archivo de entrada
-   VideoCapture capture(-1);
+   VideoCapture capture(0);
 
    // Si falla, activa la cámara por defecto
     if (!capture.isOpened())
@@ -67,8 +65,15 @@ string DEFAULT_PIPE_NAME = "/tmp/coordenadas";
         return 1;
     }
 
+   //int ex = static_cast<int>(capture.get(CV_CAP_PROP_FOURCC));
+
+   int ex = 1;
+   output_video.open("/tmp/x", ex, 15, Size(capture.get(CV_CAP_PROP_FRAME_WIDTH), capture.get(CV_CAP_PROP_FRAME_HEIGHT)), true);
+
    // Obtiene los FPS
-   double fps = 15;//capture.get(CV_CAP_PROP_FPS);
+   //capture.set(CV_CAP_PROP_FPS, 60);
+   //double fps = capture.get(CV_CAP_PROP_FPS);
+   double fps = 15;
    cout << "Frames per second: " << fps << endl;
 
    // Usado para guardar imágenes
@@ -76,16 +81,16 @@ string DEFAULT_PIPE_NAME = "/tmp/coordenadas";
    char filename[200];
    for (;;) {
        capture >> frame;
+       output_video << frame;
        if( !frame.empty() )
        {
-
            //Sin detect foreground
            puntos=hist_no_mov(frame);
 
            resize(frame, original, Size(1280,720), 0.5, 0.5, INTER_LINEAR);
            for(int i=0;i<puntos.size();i++)
            {
-		          cout << puntos[i] << endl;
+	      cout << puntos[i] << endl;
               sendCoords(puntos[i].x,puntos[i].y);
            }
 
@@ -111,6 +116,7 @@ string DEFAULT_PIPE_NAME = "/tmp/coordenadas";
        case 'c':
             cout << "Coordenadas obtenidas: " << puntos << endl;
             waitKey();
+            break;
        default:
             break;
        }
@@ -123,7 +129,6 @@ string DEFAULT_PIPE_NAME = "/tmp/coordenadas";
   * Busca los objetos a partir
   * de los bordes que encuentre
   * en la máscara, y los encuadra **/
-
  vector<Rect> detecta_contorno(Mat mascara, Mat frame){
      Mat frameAux;
      vector<vector<Point> > contours;
@@ -140,38 +145,32 @@ string DEFAULT_PIPE_NAME = "/tmp/coordenadas";
          //rectangle(frame, boundRect[i], 100, 2, 8, 0);
      }
      //Reduce tamaño de ventana
-     resize(frame, frameAux, Size(), 0.5, 0.5, INTER_LINEAR);
+     //resize(frame, frameAux, Size(), 0.75, 0.75, INTER_LINEAR);
      //imshow("Contornos", frameAux);
      return boundRect;
  }
 
-vector<Rect> comp_Rect(vector<Rect> amarillo, Rect boundRect){
-    if(amarillo.empty()==true){
-        amarillo.push_back(boundRect);
+vector<Rect> comp_Rect(vector<Rect> rectangulos, Rect boundRect){
+    if(rectangulos.empty()==true){
+        rectangulos.push_back(boundRect);
     }
     else{
-       /* int minX = boundRect.x;
-        int maxX = minX + boundRect.width;
-        int minY = boundRect.y;
-        int maxY = minY + boundRect.height;
-        int X2, Y2;
-        */
         Rect comprobar;
         Rect fusion;
-        for(int i=0; i<amarillo.size(); i++){
-            comprobar = amarillo.at(i);
+        for(int i=0; i<rectangulos.size(); i++){
+            comprobar = rectangulos.at(i);
             //Si el nuevo Rect esta dentro del antiguo
             //if(comprobar.x < minX && comprobar.x > maxX && comprobar.y < minY && comprobar.y > maxY){}
             if((boundRect & comprobar).area()!=0){
             fusion = boundRect | comprobar;
-            amarillo.at(i) = fusion;
+            rectangulos.at(i) = fusion;
             }
-            else if(i == amarillo.size()-1){
-                amarillo.push_back(boundRect);
+            else if(i == rectangulos.size()-1){
+                rectangulos.push_back(boundRect);
             }
         }
     }
-    return amarillo;
+    return rectangulos;
 }
 
 
@@ -192,27 +191,27 @@ vector<Point2i> hist_no_mov(Mat frame){
     Mat rectSectionHSV;
     Mat rectInterested;
     vector<vector<Point> > contours;
-    vector<Rect> amarillo;
+    vector<Rect> deteccion;
     Point2i punto;
     vector<Point2i> puntos;
     vector<Rect> boundRect;
 
         cvtColor(frame, rectSectionHSV, COLOR_BGR2HSV);
-        inRange(rectSectionHSV, Scalar(90,192,117), Scalar(112,255,217),rectInterested);
-        dilate(rectInterested,rectInterested, getStructuringElement(MORPH_ELLIPSE, Size(5,5)));
+        inRange(rectSectionHSV, RangeColorDetec1, RangeColorDetec2,rectInterested);
+        //dilate(rectInterested,rectInterested, getStructuringElement(MORPH_ELLIPSE, Size(10,10)));
         boundRect=detecta_contorno(rectInterested, frame);
         for(int i=0; i<boundRect.size();i++){
-            amarillo = comp_Rect(amarillo, boundRect[i]);
+            deteccion = comp_Rect(deteccion, boundRect[i]);
         }
 
-        for(int i=0; i<amarillo.size(); i++){
-            punto=coordToPoint(amarillo[i], frame);
+        for(int i=0; i<deteccion.size(); i++){
+            punto=coordToPoint(deteccion[i], frame);
             puntos.push_back(punto);
-            rectangle(frame, amarillo[i], 100, 2, 8, 0);
+            rectangle(frame, deteccion[i], ColorRectangle, 2, 8, 0);
         }
-    resize(frame, frameAux, Size(), 0.5, 0.5, INTER_LINEAR);
-    //imshow("Seccion por color", frameAux);
-        return puntos;
+    resize(frame, frameAux, Size(), 0.75, 0.75, INTER_LINEAR);
+    imshow("Seccion por color", frameAux);
+    return puntos;
 }
 
 /*
@@ -222,7 +221,7 @@ Added by brunonogareda
 int sendCoords(int X, int Y) {
 
       int t;
-      char *pipe;
+      char * pipe = new char[DEFAULT_PIPE_NAME.length()+1];
       strcpy(pipe, DEFAULT_PIPE_NAME.c_str());
 
       /*crea un nuevo archivo fifo especial,
@@ -231,14 +230,6 @@ int sendCoords(int X, int Y) {
       */
       mkfifo(pipe,0666);
 
-      /*
-      abrimos una nueva tuberia
-      O_RDONLY - Abrir para solo lectura
-      O_WRONLY - Abrir para solo escritura
-      O_RDWR - Abrir para lectura / escritura
-      O_APPEND - Agrega al final del Archivo
-      ...
-      */
       t = open(pipe,O_WRONLY | O_NONBLOCK);
       //escribimos el mensaje que compartiremos
       char msg[40] = "";
@@ -249,7 +240,7 @@ int sendCoords(int X, int Y) {
       //close(t);
 
       //borramos
-     	//unlink(pipe);
+      //unlink(pipe);
 
        return 0;
 }

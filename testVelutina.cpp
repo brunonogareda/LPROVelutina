@@ -29,10 +29,12 @@ vector<Rect> comp_Rect(vector<Rect> amarillo, Rect boundRect);
 vector<Point2i> hist_no_mov(Mat frame);
 Point2i angulo(Rect coord, Mat frame);
 int sendCoords(int X, int Y,int Z);
-wstring s2ws(const std::string& s);
-
 
 /** Variables globales */
+
+/** Ruta para la carpeta de la tubería FIFO */
+string DEFAULT_PIPE_NAME = "/tmp/coordenadas";
+
 string window_name = "Capture - Face detection";
 static int Xmin=0, Ymin=0, Xmax=0, Ymax=0; //Encuadrar
 const int MAX_COUNT = 500;
@@ -351,18 +353,6 @@ vector<Point2i> hist_no_mov(Mat frame){
         grabacion=frameAux.clone();
         imshow("Seccion por color", frameAux);
         return puntos;
-}
-
-wstring s2ws(const std::string& s)
-{
-    int len;
-    int slength = (int)s.length() + 1;
-    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
-    wchar_t* buf = new wchar_t[len];
-    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
-    std::wstring r(buf);
-    delete[] buf;
-    return r;
 }
 
 
