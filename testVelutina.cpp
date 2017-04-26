@@ -75,7 +75,7 @@ int opcion;
 
 
    //Cámara secundaria
-   VideoCapture capture(1);
+   VideoCapture capture(0);
    if (!capture.isOpened()) {
        cerr << "Failed to open a video device or video file!\n" << endl;
        return 1;
@@ -93,16 +93,16 @@ int opcion;
    //char filename[200];
 
    // Elegir opcion
-   cout << "Detectar movimiento: teclea 1 para SI, otro numero para NO: " << endl;
-   cin >> opcion;
-   cout << endl;
+   //cout << "Detectar movimiento: teclea 1 para SI, otro numero para NO: " << endl;
+   //cin >> opcion;
+  // cout << endl;
    //int i=0;
    for (;;) {
        capture >> frame;
        if( !frame.empty() )
        {
-           if(opcion==1)
-           {
+          // if(opcion==1)
+          // {
            //Con detect foreground
         /*   mascara=detectForeground( frame , Mask , bgModel);
            boundRect=detecta_contorno(mascara==255, frame);
@@ -129,17 +129,18 @@ int opcion;
             video.write(frame);
            }
            video.write(frame);*/
-           }
-           else{
+        //   }
+          // else{
            //Sin detect foreground
            puntos=hist_no_mov(frame);
            for(int x=0;x<puntos.size();x++)
            {
+	    cout << "CoodenadaX:" << puntos[x].x << " - CoordenadaY:" << puntos[x].y << " - Distancia:" << distancia << endl;
             sendCoords(puntos[x].x,puntos[x].y,distancia);
            }
             //video.write(grabacion);
 
-            }
+        //    }
            resize(frame, original, Size(), 0.5, 0.5, INTER_LINEAR);
        }
        else
@@ -321,6 +322,7 @@ vector<Point2i> hist_no_mov(Mat frame){
     Mat rectSection;
     Mat rectSectionHSV;
     Mat rectInterested;
+    Mat negro;
     vector<vector<Point> > contours;
     vector<Rect> amarillo;
     Point2i punto;
@@ -329,7 +331,7 @@ vector<Point2i> hist_no_mov(Mat frame){
     Rect turno;
         frameAux=frame.clone();
  //       cvtColor(frame, rectSectionHSV, COLOR_BGR2HSV);
-        inRange(frame, Scalar(0,64,160), Scalar(60,123,255),rectInterested); //10,127,127 30,255,255
+        inRange(frame, Scalar(0,54,160), Scalar(52,123,255),rectInterested);
         imshow("mascara",rectInterested);
         dilate(rectInterested,rectInterested, getStructuringElement(MORPH_ELLIPSE, Size(5,5)));
         boundRect=detecta_contorno(rectInterested, frame);
@@ -341,7 +343,13 @@ vector<Point2i> hist_no_mov(Mat frame){
             turno.height=turno.height+60;
             turno.width=turno.width+60;
             amarillo = comp_Rect(amarillo, turno);*/
-            amarillo = comp_Rect(amarillo, boundRect[i]);
+	    rectSection=frame(boundRect[i]);
+            inRange(rectSection,Scalar(0,1,0),Scalar(32,32,30),negro);
+	    findContours(negro,contours,CV_RETR_LIST,CV_CHAIN_APPROX_SIMPLE);
+	    if(contours.size()!=0)
+	    {
+            	amarillo = comp_Rect(amarillo, boundRect[i]);
+	    }
         }
 
         for(int i=0; i<amarillo.size(); i++){
@@ -374,12 +382,12 @@ int sendCoords(int X, int Y, int Z) {
 
       t = open(pipe,O_WRONLY | O_NONBLOCK);
       //escribimos el mensaje que compartiremos
-      char msg[40] = "";
-      snprintf(msg, sizeof(msg), "X:%i-Y:%i-Z:%i", X,Y,Z);
+      char msg[20] = "";
+      snprintf(msg, sizeof(msg), "X:%i-Y:%i-Z:%i-",X,Y,Z);
       write(t,msg,sizeof(msg));
 
       //cerramos la tuberia
-      //close(t);
+      close(t);
 
       //borramos
       //unlink(pipe);
